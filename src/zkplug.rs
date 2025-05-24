@@ -238,9 +238,9 @@ pub struct BatchProvingRequest {
 
 /// Batch proving result
 #[derive(Debug, Clone)]
-pub struct BatchProvingResult<P> {
+pub struct BatchProvingResult<P, E> {
     /// Individual proofs for each input
-    pub proofs: Vec<ZkResult<ZkProof<P>, ZkError>>,
+    pub proofs: Vec<ZkResult<ZkProof<P>, E>>,
     /// Optional aggregated proof (if backend supports aggregation)
     pub aggregated_proof: Option<ZkProof<P>>,
 }
@@ -315,7 +315,7 @@ pub trait ZkPlug: Send + Sync + Debug {
     type Proof: Send + Sync + Clone + Debug + Serialize + for<'de> Deserialize<'de> + 'static;
     
     /// The error type for this plug (should implement Into<ZkError>).
-    type Error: std::error::Error + Send + Sync + Into<ZkError> + 'static;
+   type Error: std::error::Error + Send + Sync + From<ZkError> + 'static;
 
     // === Core Proving & Verification ===
 
@@ -354,17 +354,16 @@ pub trait ZkPlug: Send + Sync + Debug {
     async fn prove_batch(
         &self,
         request: &BatchProvingRequest,
-    ) -> ZkResult<BatchProvingResult<Self::Proof>, Self::Error> {
+    ) -> ZkResult<BatchProvingResult<Self::Proof, Self::Error>, Self::Error> {
         let mut proofs = Vec::new();
         let config = request.config.as_ref();
         
         for (input, pub_input) in request.inputs.iter().zip(request.public_inputs.iter()) {
-            let proof_result = self.prove(input, pub_input.as_deref(), config).await
-                .map_err(Into::into);
+            let proof_result = self.prove(input, pub_input.as_deref(), config).await;
             proofs.push(proof_result);
         }
         
-        Ok(BatchProvingResult {
+        Ok(BatchProvingResult::<Self::Proof, Self::Error> {
             proofs,
             aggregated_proof: None,
         })

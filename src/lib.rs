@@ -6,18 +6,18 @@
 //! ## Overview
 //!
 //! This crate is the canonical interface layer for the Frostgate protocol. It defines:
-//! - **Message formats** for cross-chain communication (`FrostMessage`)
-//! - **Proof encapsulation** for ZK backends (`ProofData`)
-//! - **Chain identifiers** for multi-chain support (`ChainId`)
-//! - **Adapter traits** for blockchain integration (`ChainAdapter`)
-//! - **Pluggable ZK proof engine traits** (`Prover`)
+//! - **Message formats** for cross-chain communication ([`FrostMessage`])
+//! - **Generic ZK proof encapsulation** for pluggable backends ([`ZkProof`], [`ProofMetadata`])
+//! - **Chain identifiers** for multi-chain support ([`ChainId`])
+//! - **Adapter traits** for blockchain integration ([`ChainAdapter`])
+//! - **Pluggable ZK proof engine traits** ([`Prover`], [`ZkPlug`])
 //! - **Standard error types** for robust error handling
 //!
 //! All relayers, provers, verifiers, and chain adapters in the Frostgate ecosystem depend on these abstractions.
 //!
 //! ## Features
 //!
-//! - **ZK-agnostic:** Supports any ZK proof system or VM via generic traits and types.
+//! - **ZK-agnostic:** Supports any ZK proof system or VM via generic traits and types ([`ZkPlug`], [`ZkProof`]).
 //! - **Cross-chain:** Unified message and adapter interfaces for EVM, Solana, Substrate, and more.
 //! - **Extensible:** Easily add new chains, proof systems, or message types.
 //! - **Async-ready:** All core traits are async for compatibility with modern Rust and networked backends.
@@ -27,15 +27,16 @@
 //! ## Key Types
 //!
 //! - [`FrostMessage`]: Canonical cross-chain message structure, including payload, proof, and metadata.
-//! - [`ProofData`]: ZK proof blob and optional metadata for zk-agnostic workflows.
+//! - [`ZkProof`], [`ProofMetadata`]: Generic ZK proof wrapper and rich metadata for zk-agnostic workflows.
 //! - [`ChainId`]: Enum of supported blockchain networks.
 //! - [`ChainAdapter`]: Async trait for interacting with any supported chain.
-//! - [`Prover`]: Trait for pluggable ZK proof engines (e.g., SP1, Groth16, Plonky2).
+//! - [`Prover`], [`ZkPlug`]: Traits for pluggable ZK proof engines (e.g., SP1, Groth16, Plonky2).
 //!
 //! ## Example
 //!
 //! ```rust
 //! use frostgate_sdk::{FrostMessage, ChainId};
+//! use frostgate_sdk::zkplug::{ZkProof, ProofMetadata};
 //!
 //! let msg = FrostMessage::new(
 //!     ChainId::Ethereum,
@@ -49,18 +50,23 @@
 //! ## Extending
 //!
 //! - To add a new chain, extend [`ChainId`] and implement [`ChainAdapter`].
-//! - To support a new ZK backend, implement [`Prover`] or [`ZkPlug`] (see `zkplug.rs`).
-//! 
+//! - To support a new ZK backend, implement [`ZkPlug`] (see `zkplug.rs`).
+//!
 //! Cheers!
+
 
 #![allow(async_fn_in_trait)]
 #![allow(unused_variables)]
 #![allow(dead_code)]
 
+pub mod zkplug;
+
 use std::collections::HashMap;
 use serde::{Serialize, Deserialize};
 use uuid::Uuid;
+use crate::zkplug::*;
 use async_trait::async_trait;
+
 
 // ----------- ChainId ------------
 
@@ -87,32 +93,6 @@ impl std::fmt::Display for ChainId {
     }
 }
 
-// ----------- ProofData ------------
-
-/// ZK proof data and optional metadata.
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
-pub struct ProofData {
-    /// The proof as a byte vector.
-    pub proof: Vec<u8>,
-    /// Optionally, the type of proof or circuit used (for zk-agnostic backends).
-    pub proof_type: Option<String>,
-    /// Optional public inputs (serialized).
-    pub public_inputs: Option<Vec<u8>>,
-    /// Optional recursive or extra metadata.
-    pub metadata: Option<HashMap<String, String>>,
-}
-
-impl ProofData {
-    pub fn new(proof: Vec<u8>) -> Self {
-        Self {
-            proof,
-            proof_type: None,
-            public_inputs: None,
-            metadata: None,
-        }
-    }
-}
-
 // ----------- FrostMessage ------------
 
 /// The canonical cross-chain message structure for Frostgate.
@@ -129,7 +109,7 @@ pub struct FrostMessage {
     /// Arbitrary user/application payload (should be encoded as required).
     pub payload: Vec<u8>,
     /// Zero-knowledge proof attached to the message (optional for some flows).
-    pub proof: Option<ProofData>,
+    pub proof: Option<ZkProof<Vec<u8>>>,
     /// Unix timestamp (seconds) for message creation.
     pub timestamp: u64,
     /// Per-sender nonce for replay protection.
@@ -185,7 +165,7 @@ pub enum AdapterError {
 
     /// Chain interaction error (e.g., RPC failure)
     #[error("Timeout")]
-    Timeout,
+    Timeout(String),
 
     /// Chain not supported by this SDK version
     #[error("Chain not supported")]
@@ -193,7 +173,7 @@ pub enum AdapterError {
 
     /// Configuration or initialization error
     #[error("Configuration error")]
-    Configuration,
+    Configuration(String),
 
     /// Serialization or deserialization error
     #[error("Serialization error: {0}")]
@@ -227,7 +207,7 @@ pub enum AdapterError {
 // ----------- Prover ------------
 
 /// Result of a successful ZK proof operation.
-pub type ProverResult = Result<ProofData, ProverError>;
+pub type ProverResult = Result<ZkProof<Vec<u8>>, ProverError>;
 
 /// Errors for the prover.
 #[derive(thiserror::Error, Debug)]
@@ -331,11 +311,5 @@ mod tests {
         let de: FrostMessage = serde_json::from_str(&ser).unwrap();
         assert_eq!(msg.from_chain, de.from_chain);
         assert_eq!(msg.payload, de.payload);
-    }
-
-    #[test]
-    fn proof_data_basic() {
-        let data = ProofData::new(vec![1, 2, 3, 4]);
-        assert_eq!(data.proof, vec![1, 2, 3, 4]);
     }
 }
