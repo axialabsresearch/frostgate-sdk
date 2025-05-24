@@ -56,6 +56,11 @@
 //! 
 //! Cheers!
 
+
+#![allow(async_fn_in_trait)]
+#![allow(unused_variables)]
+#![allow(dead_code)]
+
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
