@@ -1,61 +1,4 @@
-//! # ZkPlug: Zero-Knowledge Backend Abstraction for Frostgate
-//!
-//! This module defines the [`ZkPlug`] trait and supporting types, providing a robust,
-//! extensible, and async-friendly interface for integrating zero-knowledge proof systems
-//! and ZK-VMs into the Frostgate ecosystem.
-//!
-//! ## Purpose
-//!
-//! `ZkPlug` enables zk-agnostic support for Frostgate by abstracting over proof generation,
-//! verification, batch operations, VM execution, circuit management, and backend health/resource
-//! monitoring. It is designed to support a wide range of ZK backends, including SNARKs, STARKs,
-//! ZK-VMs (e.g., SP1, Risc0), and hybrid or hardware-accelerated systems.
-//!
-//! ## Features
-//!
-//! - **Unified async trait** for proof generation, verification, execution, and batch operations
-//! - **Rich error handling** via [`ZkError`], covering all relevant ZK failure domains
-//! - **Capability discovery** via [`ZkCapability`] for feature negotiation and backend selection
-//! - **Configurable** via [`ZkConfig`] for timeouts, memory, parallelism, and custom params
-//! - **Proof metadata** and serialization helpers for provenance and interoperability
-//! - **Health/resource monitoring** for production and distributed deployments
-//! - **Plugin registry** for dynamic backend management and multi-backend support
-//!
-//! ## Example Usage
-//!
-//! ```rust
-//! use frostgate_sdk::zkplug::{ZkPlug, ZkConfig, ZkProof};
-//! use std::sync::Arc;
-//!
-//! async fn prove_and_verify<P: ZkPlug>(
-//!     plug: Arc<P>,
-//!     input: &[u8],
-//!     public_inputs: Option<&[u8]>,
-//! ) -> Result<(), P::Error> {
-//!     let config = ZkConfig::default();
-//!     let proof = plug.prove(input, public_inputs, Some(&config)).await?;
-//!     let valid = plug.verify(&proof, public_inputs, Some(&config)).await?;
-//!     assert!(valid, "Proof verification failed");
-//!     Ok(())
-//! }
-//! ```
-//!
-//! ## Extending
-//!
-//! To add a new ZK backend, implement the [`ZkPlug`] trait for your backend type. You can
-//! override only the methods your backend supports; sensible defaults are provided for unsupported
-//! features (e.g., aggregation, recursion, circuit management).
-//!
-//! ## See Also
-//!
-//! - [`ZkError`]: Standardized error types for ZK operations
-//! - [`ZkCapability`]: Feature flags for backend discovery
-//! - [`ZkConfig`]: Configuration for ZK operations
-//! - [`ZkPluginRegistry`]: Dynamic plugin management
-//!
-//! 
-//! Cheers!
-
+// ZkPlug: Zero-Knowledge Backend Abstraction for Frostgate
 
 #![allow(async_fn_in_trait)]
 #![allow(unused_variables)]
@@ -317,7 +260,7 @@ pub struct CircuitInfo {
 #[async_trait]
 pub trait ZkPlug: Send + Sync + Debug {
     /// The proof type produced/consumed by this plug.
-    type Proof: Send + Sync + Clone + Debug + Serialize + for<'de> Deserialize<'de> + 'static;
+    type Proof: Send + Sync + Clone + Serialize + for<'de> Deserialize<'de> + 'static;
     
     /// The error type for this plug (should implement Into<ZkError>).
    type Error: std::error::Error + Send + Sync + From<ZkError> + 'static;

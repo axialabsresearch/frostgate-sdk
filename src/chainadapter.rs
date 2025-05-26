@@ -1,3 +1,5 @@
+// Chain Abstraction Layer and Messaging
+
 #![allow(async_fn_in_trait)]
 #![allow(unused_variables)]
 #![allow(dead_code)]
@@ -7,9 +9,6 @@ use serde::{Serialize, Deserialize};
 use uuid::Uuid;
 use crate::zkplug::*;
 use async_trait::async_trait;
-
-
-// ----------- ChainId ------------
 
 /// Supported chain identifiers. Extend as needed for more chains.
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
@@ -33,8 +32,6 @@ impl std::fmt::Display for ChainId {
         write!(f, "{}", s)
     }
 }
-
-// ----------- FrostMessage ------------
 
 /// The canonical cross-chain message structure for Frostgate.
 ///
@@ -86,8 +83,6 @@ impl FrostMessage {
         }
     }
 }
-
-// ----------- AdapterError ------------
 
 /// Errors that can occur in adapters or core SDK logic.
 #[derive(thiserror::Error, Debug)]
@@ -144,8 +139,6 @@ pub enum AdapterError {
     #[error(transparent)]
     Anyhow(#[from] anyhow::Error),
 }
-
-// ----------- ChainAdapter ------------
 
 /// Message status for querying relay pipeline progress.
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
