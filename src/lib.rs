@@ -1,2 +1,1 @@
-pub mod zkplug;
-pub mod chainadapter;
+pub mod frostmessage;

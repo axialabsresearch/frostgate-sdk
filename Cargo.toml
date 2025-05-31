@@ -15,3 +15,4 @@ bincode.workspace = true
 sha2 = "0.10.9"
 tokio.workspace = true
 num_cpus = "1.16.0"
+frostgate-zkip = { path = "../frostgate-zkip" }
