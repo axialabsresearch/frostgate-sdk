@@ -10,7 +10,7 @@ use frostgate_zkip::zkplug::*;
 use async_trait::async_trait;
 
 /// Supported chain identifiers. Extend as needed for more chains.
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash, Copy)]
 pub enum ChainId {
     Ethereum,
     Polkadot,
@@ -29,6 +29,19 @@ impl std::fmt::Display for ChainId {
             ChainId::Unknown => "Unknown",
         };
         write!(f, "{}", s)
+    }
+}
+
+impl std::convert::TryFrom<u64> for ChainId {
+    type Error = ();
+
+    fn try_from(value: u64) -> Result<Self, Self::Error> {
+        match value {
+            0 => Ok(ChainId::Ethereum),
+            1 => Ok(ChainId::Polkadot),
+            2 => Ok(ChainId::Solana),
+            _ => Ok(ChainId::Unknown),
+        }
     }
 }
 
