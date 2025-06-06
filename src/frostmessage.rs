@@ -20,6 +20,18 @@ pub enum ChainId {
     Unknown,
 }
 
+impl ChainId {
+    /// Convert chain ID to u64 for serialization
+    pub fn to_u64(&self) -> u64 {
+        match self {
+            ChainId::Ethereum => 0,
+            ChainId::Polkadot => 1,
+            ChainId::Solana => 2,
+            ChainId::Unknown => u64::MAX,
+        }
+    }
+}
+
 impl std::fmt::Display for ChainId {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         let s = match self {
