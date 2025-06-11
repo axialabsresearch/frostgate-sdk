@@ -1,0 +1,107 @@
+use async_trait::async_trait;
+use crate::types::{
+    AdapterError, ChainCapabilities, ConnectionStatus, FinalizedBlock,
+    HealthMetrics, SubmissionOptions, TransactionDetails,
+};
+use crate::frostmessage::{FrostMessage, MessageEvent};
+use std::time::Duration;
+
+/// Provides finality-related functionality for a blockchain
+#[async_trait]
+pub trait FinalityProvider: Send + Sync {
+    /// The type used to identify blocks in this chain
+    type BlockId: Clone + std::fmt::Debug + Send + Sync + 'static;
+
+    /// Get the latest finalized block
+    async fn latest_finalized_block(&self) -> Result<FinalizedBlock<Self::BlockId>, AdapterError>;
+
+    /// Wait for a block to reach finality
+    async fn wait_for_finality(
+        &self,
+        block: &Self::BlockId,
+        timeout: Option<Duration>,
+    ) -> Result<FinalizedBlock<Self::BlockId>, AdapterError>;
+
+    /// Check if a block is finalized
+    async fn is_finalized(&self, block: &Self::BlockId) -> Result<bool, AdapterError>;
+}
+
+/// Handles proof generation and verification
+#[async_trait]
+pub trait MessageProver: Send + Sync {
+    /// Generate a proof for a message
+    async fn generate_proof(&self, message: &FrostMessage) -> Result<Vec<u8>, AdapterError>;
+
+    /// Verify a proof
+    async fn verify_proof(&self, message: &FrostMessage) -> Result<bool, AdapterError>;
+}
+
+/// Handles message submission to chains
+#[async_trait]
+pub trait MessageSubmitter: Send + Sync {
+    /// The type used to identify transactions in this chain
+    type TxId: Clone + std::fmt::Debug + Send + Sync + 'static;
+
+    /// Submit a message to the chain
+    async fn submit_message(
+        &self,
+        message: &FrostMessage,
+        options: Option<SubmissionOptions>,
+    ) -> Result<Self::TxId, AdapterError>;
+
+    /// Get transaction details
+    async fn get_transaction_details(
+        &self,
+        tx_id: &Self::TxId,
+    ) -> Result<TransactionDetails, AdapterError>;
+
+    /// Wait for transaction confirmation
+    async fn wait_for_confirmation(
+        &self,
+        tx_id: &Self::TxId,
+        timeout: Option<Duration>,
+    ) -> Result<TransactionDetails, AdapterError>;
+}
+
+/// Handles event listening and filtering
+#[async_trait]
+pub trait EventListener: Send + Sync {
+    /// Listen for new message events
+    async fn listen_for_events(&self) -> Result<Vec<MessageEvent>, AdapterError>;
+
+    /// Subscribe to message events
+    async fn subscribe_to_events(&self) -> Result<EventSubscription, AdapterError>;
+}
+
+/// Event subscription handle
+pub struct EventSubscription {
+    pub id: String,
+    pub filter: Option<String>,
+}
+
+/// Provides chain capabilities information
+#[async_trait]
+pub trait CapabilityProvider: Send + Sync {
+    /// Get chain capabilities
+    async fn capabilities(&self) -> Result<ChainCapabilities, AdapterError>;
+
+    /// Check if a specific capability is supported
+    async fn supports_capability(&self, capability: &str) -> Result<bool, AdapterError>;
+
+    /// Get chain connection status
+    async fn connection_status(&self) -> Result<ConnectionStatus, AdapterError>;
+
+    /// Get detailed health metrics
+    async fn health_metrics(&self) -> Result<HealthMetrics, AdapterError>;
+}
+
+/// Combined trait for full chain adapter functionality
+pub trait ChainAdapter:
+    FinalityProvider + MessageProver + MessageSubmitter + EventListener + CapabilityProvider
+{
+    /// Get the chain ID this adapter handles
+    fn chain_id(&self) -> crate::frostmessage::ChainId;
+
+    /// Get a unique identifier for this adapter instance
+    fn adapter_id(&self) -> String;
+} 

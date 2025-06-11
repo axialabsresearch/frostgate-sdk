@@ -8,6 +8,7 @@ use serde::{Serialize, Deserialize};
 use uuid::Uuid;
 use frostgate_zkip::zkplug::*;
 use async_trait::async_trait;
+use frostgate_icap::traits::message::CrossChainMessage;
 
 /// Supported chain identifiers. Extend as needed for more chains.
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash, Copy)]
@@ -105,6 +106,20 @@ impl FrostMessage {
             fee: None,
             metadata: None,
         }
+    }
+}
+
+impl CrossChainMessage for FrostMessage {
+    fn id(&self) -> Uuid {
+        self.id
+    }
+
+    fn payload(&self) -> &[u8] {
+        &self.payload
+    }
+
+    fn chain_specific_data(&self) -> Option<&[u8]> {
+        None // FrostMessage uses metadata HashMap for chain-specific data
     }
 }
 
