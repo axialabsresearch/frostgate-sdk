@@ -100,29 +100,121 @@ pub enum FinalityType {
 #[derive(Debug, thiserror::Error)]
 pub enum AdapterError {
     #[error("Finality error: {0}")]
-    FinalityError(String),
+    Finality(#[from] FinalityError),
 
     #[error("Connection error: {0}")]
-    ConnectionError(String),
+    Connection(String),
 
-    #[error("Proof verification error: {0}")]
-    ProofVerificationError(String),
+    #[error("Proof error: {0}")]
+    Proof(#[from] ProofError),
 
     #[error("Message format error: {0}")]
-    MessageFormatError(String),
+    MessageFormat(String),
 
     #[error("Chain capability error: {0}")]
-    CapabilityError(String),
+    Capability(String),
 
     #[error("Transaction error: {0}")]
-    TransactionError(String),
+    Transaction(#[from] SubmissionError),
 
     #[error("Rate limit error: {0}")]
-    RateLimitError(String),
+    RateLimit(String),
 
     #[error("Configuration error: {0}")]
-    ConfigurationError(String),
+    Configuration(String),
 
+    #[error("Event error: {0}")]
+    Event(#[from] EventError),
+
+    #[error("Fee estimation error: {0}")]
+    FeeEstimation(#[from] FeeEstimationError),
+
+    #[error(transparent)]
+    Other(#[from] anyhow::Error),
+}
+
+/// Finality-related errors
+#[derive(Debug, thiserror::Error)]
+pub enum FinalityError {
+    #[error("Block not found: {0}")]
+    BlockNotFound(String),
+    
+    #[error("Finality timeout after {0} seconds")]
+    Timeout(u64),
+    
+    #[error("Network error: {0}")]
+    Network(String),
+    
+    #[error("Invalid finality proof: {0}")]
+    InvalidProof(String),
+    
+    #[error(transparent)]
+    Other(#[from] anyhow::Error),
+}
+
+/// Proof-related errors
+#[derive(Debug, thiserror::Error)]
+pub enum ProofError {
+    #[error("Failed to generate proof: {0}")]
+    Generation(String),
+    
+    #[error("Failed to verify proof: {0}")]
+    Verification(String),
+    
+    #[error("Invalid proof format: {0}")]
+    InvalidFormat(String),
+    
+    #[error("Missing verification key")]
+    MissingVerificationKey,
+    
+    #[error(transparent)]
+    Other(#[from] anyhow::Error),
+}
+
+/// Transaction submission errors
+#[derive(Debug, thiserror::Error)]
+pub enum SubmissionError {
+    #[error("Transaction failed: {0}")]
+    Failed(String),
+    
+    #[error("Insufficient funds")]
+    InsufficientFunds,
+    
+    #[error("Network error: {0}")]
+    Network(String),
+    
+    #[error("Invalid message format: {0}")]
+    InvalidMessage(String),
+    
+    #[error(transparent)]
+    Other(#[from] anyhow::Error),
+}
+
+/// Fee estimation errors
+#[derive(Debug, thiserror::Error)]
+pub enum FeeEstimationError {
+    #[error("Estimation failed: {0}")]
+    Failed(String),
+    
+    #[error("Network error: {0}")]
+    Network(String),
+    
+    #[error(transparent)]
+    Other(#[from] anyhow::Error),
+}
+
+/// Event-related errors
+#[derive(Debug, thiserror::Error)]
+pub enum EventError {
+    #[error("Failed to subscribe: {0}")]
+    SubscriptionFailed(String),
+    
+    #[error("Network error: {0}")]
+    Network(String),
+    
+    #[error("Invalid event data: {0}")]
+    InvalidData(String),
+    
     #[error(transparent)]
     Other(#[from] anyhow::Error),
 }
