@@ -6,17 +6,18 @@
 use std::collections::HashMap;
 use serde::{Serialize, Deserialize};
 use uuid::Uuid;
-use frostgate_zkip::zkplug::*;
-use async_trait::async_trait;
-use frostgate_icap::traits::message::CrossChainMessage;
+use frostgate_zkip::types::ProofMetadata;
 
 /// Supported chain identifiers. Extend as needed for more chains.
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash, Copy)]
 pub enum ChainId {
+    /// Ethereum blockchain
     Ethereum,
+    /// Polkadot blockchain
     Polkadot,
+    /// Solana blockchain
     Solana,
-    // Extend as needed (Cosmos, Aptos, etc)
+    /// Unknown or unsupported chain
     #[serde(other)]
     Unknown,
 }
@@ -48,6 +49,10 @@ impl std::fmt::Display for ChainId {
 impl std::convert::TryFrom<u64> for ChainId {
     type Error = ();
 
+    /// Attempts to convert a u64 into a ChainId.
+    /// 
+    /// # Errors
+    /// Returns `Ok(ChainId::Unknown)` for unrecognized chain IDs.
     fn try_from(value: u64) -> Result<Self, Self::Error> {
         match value {
             0 => Ok(ChainId::Ethereum),
@@ -56,6 +61,15 @@ impl std::convert::TryFrom<u64> for ChainId {
             _ => Ok(ChainId::Unknown),
         }
     }
+}
+
+/// A zero-knowledge proof with its metadata
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Proof {
+    /// The actual proof bytes
+    pub data: Vec<u8>,
+    /// Metadata about the proof
+    pub metadata: ProofMetadata,
 }
 
 /// The canonical cross-chain message structure for Frostgate.
@@ -72,7 +86,7 @@ pub struct FrostMessage {
     /// Arbitrary user/application payload (should be encoded as required).
     pub payload: Vec<u8>,
     /// Zero-knowledge proof attached to the message (optional for some flows).
-    pub proof: Option<ZkProof<Vec<u8>>>,
+    pub proof: Option<Proof>,
     /// Unix timestamp (seconds) for message creation.
     pub timestamp: u64,
     /// Per-sender nonce for replay protection.
@@ -87,6 +101,13 @@ pub struct FrostMessage {
 
 impl FrostMessage {
     /// Construct a new unsigned FrostMessage.
+    ///
+    /// # Arguments
+    /// * `from_chain` - Source chain identifier
+    /// * `to_chain` - Destination chain identifier
+    /// * `payload` - Message payload as bytes
+    /// * `nonce` - Per-sender nonce for replay protection
+    /// * `timestamp` - Unix timestamp in seconds
     pub fn new(
         from_chain: ChainId,
         to_chain: ChainId,
@@ -109,6 +130,16 @@ impl FrostMessage {
     }
 }
 
+/// A trait for messages that can be sent across chains.
+pub trait CrossChainMessage {
+    /// Get the unique identifier of the message.
+    fn id(&self) -> Uuid;
+    /// Get the message payload as a byte slice.
+    fn payload(&self) -> &[u8];
+    /// Get any chain-specific data associated with the message.
+    fn chain_specific_data(&self) -> Option<&[u8]>;
+}
+
 impl CrossChainMessage for FrostMessage {
     fn id(&self) -> Uuid {
         self.id
@@ -126,20 +157,31 @@ impl CrossChainMessage for FrostMessage {
 /// Message status for querying relay pipeline progress.
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 pub enum MessageStatus {
+    /// Message is pending processing
     Pending,
+    /// Message is being processed
     InFlight,
+    /// Message has been confirmed
     Confirmed,
+    /// Message processing failed with error
     Failed(String),
 }
 
 /// Transaction hash or equivalent per chain.
+/// 
+/// This type represents a transaction identifier which may vary in format
+/// depending on the specific blockchain (e.g., 32 bytes for Ethereum,
+/// different formats for other chains).
 pub type TxHash = Vec<u8>;
 
 /// Message event structure (from source chain).
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct MessageEvent {
+    /// The message associated with this event
     pub message: FrostMessage,
+    /// Optional transaction hash if available
     pub tx_hash: Option<TxHash>,
+    /// Optional block number where the event was emitted
     pub block_number: Option<u64>,
 }
 

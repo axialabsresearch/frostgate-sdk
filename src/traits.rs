@@ -1,3 +1,5 @@
+#![allow(unused_imports)]
+
 use async_trait::async_trait;
 use crate::types::{
     AdapterError, ChainCapabilities, ConnectionStatus, FinalizedBlock,
@@ -50,10 +52,10 @@ pub trait MessageSubmitter: Send + Sync {
     ) -> Result<Self::TxId, AdapterError>;
 
     /// Get transaction details
-    async fn get_transaction_details(
+    async fn get_transaction(
         &self,
         tx_id: &Self::TxId,
-    ) -> Result<TransactionDetails, AdapterError>;
+    ) -> Result<Option<TransactionDetails>, AdapterError>;
 
     /// Wait for transaction confirmation
     async fn wait_for_confirmation(
@@ -61,6 +63,9 @@ pub trait MessageSubmitter: Send + Sync {
         tx_id: &Self::TxId,
         timeout: Option<Duration>,
     ) -> Result<TransactionDetails, AdapterError>;
+
+    /// Estimate fee for submitting a message
+    async fn estimate_fee(&self, message: &FrostMessage) -> Result<u128, AdapterError>;
 }
 
 /// Handles event listening and filtering
@@ -69,8 +74,16 @@ pub trait EventListener: Send + Sync {
     /// Listen for new message events
     async fn listen_for_events(&self) -> Result<Vec<MessageEvent>, AdapterError>;
 
+    /// Filter events by block range and event types
+    async fn filter_events(
+        &self,
+        from_block: Option<u64>,
+        to_block: Option<u64>,
+        event_types: Option<Vec<String>>,
+    ) -> Result<Vec<MessageEvent>, AdapterError>;
+
     /// Subscribe to message events
-    async fn subscribe_to_events(&self) -> Result<EventSubscription, AdapterError>;
+    async fn subscribe(&self) -> Result<EventSubscription, AdapterError>;
 }
 
 /// Event subscription handle

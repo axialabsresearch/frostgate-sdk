@@ -1,3 +1,5 @@
+#![allow(unused_imports)]
+
 use std::time::{Duration, SystemTime};
 use serde::{Serialize, Deserialize};
 use std::collections::HashMap;
@@ -23,6 +25,8 @@ pub enum TransactionDetails {
     Raw(Vec<u8>),
     /// Parsed transaction data
     Parsed(ParsedTransaction),
+    /// Zero-knowledge proof data
+    Proof(ProofData),
 }
 
 /// Common transaction fields across chains
@@ -43,6 +47,16 @@ pub enum TransactionStatus {
     Pending,
     Confirmed,
     Failed(String),
+    Dropped,
+}
+
+/// Zero-knowledge proof data
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ProofData {
+    pub proof_type: String,
+    pub proof: Vec<u8>,
+    pub public_inputs: Vec<Vec<u8>>,
+    pub verification_key: Option<Vec<u8>>,
 }
 
 /// Chain capabilities and features
