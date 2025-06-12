@@ -16,3 +16,6 @@ sha2 = "0.10.9"
 tokio.workspace = true
 num_cpus = "1.16.0"
 frostgate-zkip = { path = "../frostgate-zkip" }
+parking_lot.workspace = true
+lru.workspace = true
+blake2.workspace = true

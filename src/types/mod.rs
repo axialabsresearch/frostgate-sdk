@@ -3,7 +3,7 @@
 use std::time::{Duration, SystemTime};
 use serde::{Serialize, Deserialize};
 use std::collections::HashMap;
-use crate::frostmessage::ChainId;
+use crate::frostmessages::ChainId;
 
 /// A finalized block with proof of finality
 #[derive(Debug, Clone, Serialize, Deserialize)]

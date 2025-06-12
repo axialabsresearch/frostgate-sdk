@@ -1,7 +1,4 @@
-pub mod frostmessage;
+pub mod frostmessages;
 pub mod types;
 pub mod traits;
-
-pub use frostmessage::*;
-pub use types::*;
-pub use traits::*;
+pub mod verification;

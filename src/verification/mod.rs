@@ -1,3 +1,5 @@
+#![allow(unused_imports)]
+
 //! Message verification module for the Frostgate SDK
 //! This module provides functionality for verifying cross-chain messages using the new ZkBackend interface.
 
@@ -7,7 +9,7 @@ use parking_lot::RwLock;
 use lru::LruCache;
 use blake2::{Blake2b512, Digest};
 
-use crate::frostmessage::{FrostMessage, ChainId};
+use crate::frostmessages::{FrostMessage, ChainId};
 use frostgate_zkip::{
     ZkBackend, ZkBackendExt, ZkError, ZkResult,
     types::{HealthStatus, ProofMetadata, ResourceUsage, ZkConfig},
