@@ -1,9 +1,11 @@
 #![allow(unused_imports)]
 
+//! Core types
+//! 
 use std::time::{Duration, SystemTime};
 use serde::{Serialize, Deserialize};
 use std::collections::HashMap;
-use crate::frostmessages::ChainId;
+use crate::messages::ChainId;
 
 /// A finalized block with proof of finality
 #[derive(Debug, Clone, Serialize, Deserialize)]

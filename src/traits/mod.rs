@@ -5,7 +5,7 @@ use crate::types::{
     AdapterError, ChainCapabilities, ConnectionStatus, FinalizedBlock,
     HealthMetrics, SubmissionOptions, TransactionDetails,
 };
-use crate::frostmessages::{FrostMessage, MessageEvent};
+use crate::messages::{FrostMessage, MessageEvent};
 use std::time::Duration;
 
 /// Provides finality-related functionality for a blockchain
@@ -113,7 +113,7 @@ pub trait ChainAdapter:
     FinalityProvider + MessageProver + MessageSubmitter + EventListener + CapabilityProvider
 {
     /// Get the chain ID this adapter handles
-    fn chain_id(&self) -> crate::frostmessages::ChainId;
+    fn chain_id(&self) -> crate::messages::ChainId;
 
     /// Get a unique identifier for this adapter instance
     fn adapter_id(&self) -> String;
