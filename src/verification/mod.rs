@@ -11,8 +11,9 @@ use blake2::{Blake2b512, Digest};
 use std::num::NonZeroUsize;
 use std::path::Path;
 use std::fs;
+use std::time::{Duration, SystemTime};
 
-use crate::messages::{FrostMessage, ChainId};
+use crate::messages::{FrostMessage, ChainId, Proof};
 use frostgate_zkip::{
     ZkBackend, ZkBackendExt, ZkError, ZkResult,
     types::{HealthStatus, ProofMetadata, ResourceUsage, ZkConfig},
@@ -180,10 +181,20 @@ mod tests {
     use uuid::Uuid;
 
     // Mock backend for testing
+    #[derive(Debug)]
     struct MockBackend;
     
     #[async_trait]
     impl ZkBackend for MockBackend {
+        async fn prove(&self, _program: &[u8], _input: &[u8], _config: Option<&ZkConfig>) -> ZkResult<(Vec<u8>, frostgate_zkip::types::ProofMetadata)> {
+            Ok((vec![], frostgate_zkip::types::ProofMetadata {
+                generation_time: Duration::from_secs(1),
+                proof_size: 4,
+                program_hash: "dummy".to_string(),
+                timestamp: SystemTime::now(),
+            }))
+        }
+
         async fn verify(&self, _program: &[u8], _proof: &[u8], _config: Option<&ZkConfig>) -> ZkResult<bool> {
             Ok(true)
         }
@@ -193,7 +204,13 @@ mod tests {
         }
 
         fn resource_usage(&self) -> ResourceUsage {
-            ResourceUsage::default()
+            ResourceUsage {
+                cpu_usage: 0.0,
+                memory_usage: 0,
+                active_tasks: 0,
+                max_concurrent: 1,
+                queue_depth: 0,
+            }
         }
     }
 
@@ -209,9 +226,14 @@ mod tests {
             from_chain: ChainId::Ethereum,
             to_chain: ChainId::Polkadot,
             payload: b"test".to_vec(),
-            proof: Some(frostgate_zkip::types::Proof {
+            proof: Some(crate::messages::Proof {
                 data: vec![1, 2, 3, 4],
-                metadata: None,
+                metadata: frostgate_zkip::types::ProofMetadata {
+                    generation_time: Duration::from_secs(1),
+                    proof_size: 4,
+                    program_hash: "dummy".to_string(),
+                    timestamp: SystemTime::now(),
+                },
             }),
             timestamp: 1_725_000_000,
             nonce: 1,
@@ -238,9 +260,14 @@ mod tests {
                 from_chain: ChainId::Ethereum,
                 to_chain: ChainId::Polkadot,
                 payload: b"test1".to_vec(),
-                proof: Some(frostgate_zkip::types::Proof {
+                proof: Some(crate::messages::Proof {
                     data: vec![1, 2, 3, 4],
-                    metadata: None,
+                    metadata: frostgate_zkip::types::ProofMetadata {
+                        generation_time: Duration::from_secs(1),
+                        proof_size: 4,
+                        program_hash: "dummy".to_string(),
+                        timestamp: SystemTime::now(),
+                    },
                 }),
                 timestamp: 1_725_000_000,
                 nonce: 1,
@@ -253,9 +280,14 @@ mod tests {
                 from_chain: ChainId::Solana,
                 to_chain: ChainId::Ethereum,
                 payload: b"test2".to_vec(),
-                proof: Some(frostgate_zkip::types::Proof {
+                proof: Some(crate::messages::Proof {
                     data: vec![5, 6, 7, 8],
-                    metadata: None,
+                    metadata: frostgate_zkip::types::ProofMetadata {
+                        generation_time: Duration::from_secs(1),
+                        proof_size: 4,
+                        program_hash: "dummy".to_string(),
+                        timestamp: SystemTime::now(),
+                    },
                 }),
                 timestamp: 1_725_000_001,
                 nonce: 2,
