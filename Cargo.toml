@@ -1,7 +1,9 @@
 [package]
 name = "frostgate-sdk"
 version = "0.1.0"
-edition = "2024"
+edition = "2021"
+description = "High-level SDK for interacting with Frostgate zero-knowledge proof system"
+license = "MIT OR Apache-2.0"
 
 [dependencies]
 serde = { workspace = true }
